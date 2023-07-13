@@ -10,7 +10,7 @@
 #define		SECTOR					DWORD
 #define		BLOCK_SIZE				1024  
 #define		SECTOR_SIZE				512
-#define		NUMBER_OF_SECTORS		( 600000 + 2 )  //Tổng số sectors trong tất cả block groups và boot block
+#define		NUMBER_OF_SECTORS		( 600000 + 2 )  //모든 blockgroup의 sector개수 + boot block
 
 #define COND_MOUNT				0x01
 #define COND_UMOUNT				0x02
@@ -84,7 +84,7 @@ int g_isMounted;
 
 int main(int argc, char* argv[])
 {
-	if (disksim_init(NUMBER_OF_SECTORS, SECTOR_SIZE, &g_disk) < 0)    //Khởi tạo disk
+	if (disksim_init(NUMBER_OF_SECTORS, SECTOR_SIZE, &g_disk) < 0)    //disk 초기화 
 	{
 		printf("disk simulator initialization has been failed\n");
 		return -1;
@@ -97,7 +97,8 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-int check_conditions(int conditions)    //Kiểm tra điều kiện xem nếu cần mount nhưng chưa dc mount hoặc ko được mount nhưng lại mount
+int check_conditions(int conditions)    //mount되어야하는 명령어인데 mount되지 않은경우, mount되지 않아야하는 명령어인데 mount된 경우 error
+{
 	if (conditions & COND_MOUNT && !g_isMounted)  
 	{
 		printf("file system is not mounted\n");
@@ -127,23 +128,23 @@ void do_shell(void)
 		printf("[/%s]# ", g_currentDir.name);
 
 		fgets(buf, 1000, stdin);
-		argc = seperate_string(buf, argv);  //Chia input từ user dựa trên các ký tự space và lưu trong argv, lưu số lượng chuỗi trong argc
+		argc = seperate_string(buf, argv);  //사용자 입력 문자열을 공백문자 기준으로 나누어서 argv에 저장, argc에 문자열 개수 저장
 
-		if (argc == 0) //Nếu ko có input
+		if (argc == 0) //입력이 없는 경우 
 			continue;
 
-		for (i = 0; i < g_commandsCount; i++) //Kiểm tra bằng loop số lệnh
+		for (i = 0; i < g_commandsCount; i++) //command개수만큼 for문을 돌며 확인
 		{
-			if (strcmp(g_commands[i].name, argv[0]) == 0) //So sánh tên lệnh và chuỗi lệnh input
+			if (strcmp(g_commands[i].name, argv[0]) == 0) //command 이름과 사용자 입력 명령어 문자열 비교 
 			{
-				if (check_conditions(g_commands[i].conditions) == 0)  //Xác định xem có cần mount hay không
-					g_commands[i].handler(argc, argv);    //Gọi trình xử lí
+				if (check_conditions(g_commands[i].conditions) == 0)  //명령어의 mount필요성과 mount여부 판별
+					g_commands[i].handler(argc, argv);    //명령어 handler호출 
 
 				break;
 			}
 		}
 
-		if (argc != 0 && i == g_commandsCount)  //Trường hợp có input nhưng lệnh không phù hợp
+		if (argc != 0 && i == g_commandsCount)  //입력은 있는데 일치하는 명령어가 없는 경우 
 			unknown_command();
 	}
 }
@@ -170,9 +171,9 @@ int seperate_string(char* buf, char* ptrs[])
 
 	while (*buf)
 	{
-		if (isspace(*buf))       //Xác định có kí tự space trong buf ko
+		if (isspace(*buf))       //buf의 문자가 공백문자인지 판별
 			*buf = 0;
-		else if (prev == 0)     //Save address bắt đầu của một string nếu kí tự trước đó là space
+		else if (prev == 0)     //이전 문자가 공백문자인 경우 문자열 시작주소 저장
 			ptrs[count++] = buf;
 
 		prev = *buf++;
@@ -203,8 +204,8 @@ int shell_cmd_format(int argc, char * argv[])
 	int		result;
 	char*	param = NULL;
 
-	if (argc >= 2)        //Xem lệnh đối số tồn tại ko
-		param = argv[1];    //Lưu trữ đối số đầu tiên
+	if (argc >= 2)        //명령어 인자가 존재하는 경우 
+		param = argv[1];    //첫 번째 인자 저장
 
 	result = g_fs.format(&g_disk, param); 
 

@@ -12,7 +12,7 @@
 #include "disk.h"
 
 #define     EXT2_N_BLOCKS           15
-#define		NUMBER_OF_SECTORS		( 300000 + 2 )    //( 8192 + 2 )	//sector size 512 byte
+#define		NUMBER_OF_SECTORS		( 300000 + 2 )    //( 8192 + 2 )	//sector 크기 512 byte
 #define		NUMBER_OF_GROUPS		20  //4
 #define		NUMBER_OF_INODES		3000
 #define		VOLUME_LABLE			"NC 19th"
@@ -23,8 +23,8 @@
 #define MAX_ENTRY_NAME_LENGTH	11
 #define MAX_BLOCK_PER_FILE		140000
 
-#define GDT_BLOCK_COUNT 		2		//so block cua group descriptor table
-#define INODETABLE_BLOCK_COUNT 	23		//so block cua inode table
+#define GDT_BLOCK_COUNT 		2		//group descriptor table의 블록 개수
+#define INODETABLE_BLOCK_COUNT 	23		//inode table의 블록 개수
 
 #define UID 0x1234
 #define GID 0x1234
@@ -49,38 +49,38 @@
 
 typedef struct
 {
-	UINT32 inode_count;				//total number of inodes 
-	UINT32 block_count;				//Total number of data blocks
+	UINT32 inode_count;				//전체 inode 개수 
+	UINT32 block_count;				//전체 data block 개수
 	UINT32 reserved_block_count;	
 	UINT32 free_block_count;	
 	UINT32 free_inode_count;
 
-	UINT32 first_data_block;		
-	UINT32 log_block_size;			
+	UINT32 first_data_block;		//block group0의 ���۵Ǵ� ����
+	UINT32 log_block_size;			//block size�� 2^n * 1024 byte�� �� n��
 	UINT32 log_fragmentation_size;
 	UINT32 block_per_group;			
 	UINT32 fragmentation_per_group;
 	UINT32 inode_per_group;
-	time_t mtime;					
-	//UINT32 wtime;				
+	time_t mtime;					//���������� ���Ͻý����� mount�� �ð�
+	//UINT32 wtime;					//���������� superblock�� ������ �ð�
 	//UINT16 mount_count
 	//UINT16 max_mount_count
 	UINT16 magic_signature;
-	UINT16 state;					 
-	/* EXT2_VALID_FS 0x0001		
-	   EXT2_ERROR_FS 0x0002		error  */
+	UINT16 state;					//���Ͻý����� ���� 
+	/* EXT2_VALID_FS 0x0001		������ ���
+	   EXT2_ERROR_FS 0x0002		error �߻�   */
 	UINT16 errors;
-	/* EXT2_ERRORS_CONTINUE	0	
+	/* EXT2_ERRORS_CONTINUE	0	����
 	   EXT2_ERRORS_RO		1	READ ONLY
-	   EXT2_ERRORS_PANIC	2	
-	   EXT2_ERRORS_DEFAULT	0	) */
+	   EXT2_ERRORS_PANIC	2	�дл���
+	   EXT2_ERRORS_DEFAULT	0	�⺻��(����) */
 	//UINT16 minor_version
 	UINT32 creator_os;			//EXT2_OS_LINUX 0
-	UINT32 first_non_reserved_inode;	
-	UINT16 inode_structure_size;		 
+	UINT32 first_non_reserved_inode;	//������� ���� inode�� ù ��° �ε���
+	UINT16 inode_structure_size;		//inode ����ü�� ũ�� 
 
-	UINT16 block_group_number;
-	UINT32 first_data_block_each_group; 
+	UINT16 block_group_number;			//������ superblock�� �����ϰ� �ִ� block group
+	UINT32 first_data_block_each_group; //�� �׷쳻���� ù ��° datablock�� ��ȣ 
 
 	BYTE volume_name[16];
 

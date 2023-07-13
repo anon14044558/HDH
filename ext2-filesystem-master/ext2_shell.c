@@ -113,7 +113,7 @@ int fs_mount(DISK_OPERATIONS* disk, SHELL_FS_OPERATIONS* fsOprs, SHELL_ENTRY* ro
 
 	ext2_entry_to_shell_entry(fs, &root_node, root);
 
-	/* Thông tin hệ thống sau khi mount */
+	/* mount 정보 출력 */
 	printf("volume name        : %s\n", root->name);
 	printf("number of sector   : %u\n", fs->disk->numberOfSectors);
 	printf("bytes per sector   : %u\n", fs->disk->bytesPerSector);
@@ -200,24 +200,24 @@ int fs_mv(DISK_OPERATIONS* disk, SHELL_FS_OPERATIONS* fsOprs, SHELL_ENTRY* paren
 
 	shell_entry_to_ext2_entry(parent, &ext2_parent);
 
-	if(ext2_lookup(&ext2_parent, name, &entry) == 1) {				//Kiểm tra tệp có tồn tại ko
+	if(ext2_lookup(&ext2_parent, name, &entry) == 1) {				//이동하려는 파일이 존재하는지 검사 
 		printf("No %s file\n", name);
 		return -1;
 	}
 
-	if(ext2_lookup(&ext2_parent, dir, &directory) == 1) {			//Kiểm tra thư mục tồn tại ko
+	if(ext2_lookup(&ext2_parent, dir, &directory) == 1) {			//이동하려는 디렉토리가 존재하는지 검사
 		printf("No %s directory\n", dir);
 		return -1;
 	}
 
 	ext2_entry_to_shell_entry(fsOprs->pdata, &directory, &shell_dir);
 
-	if(shell_dir.isDirectory != 1) {								//Kiểm tra thư mục có phải là tệp thư mục k
+	if(shell_dir.isDirectory != 1) {								//찾은 디렉토리가 디렉토리 파일이 맞는지 검사 
 		printf("%s file is not a directory file\n", dir);
 		return -1;
 	}
 
-	release_dir_entry(fsOprs->pdata, &ext2_parent, &entry);				//Xóa mục nhập thư mục của tệp muốn di chuyển khỏi thư mục gốc
+	release_dir_entry(fsOprs->pdata, &ext2_parent, &entry);				//원래 존재하던 디렉토리에서 이동하려는 파일의 directory entry 삭제 
 	insert_entry(fsOprs->pdata, &directory, &entry.entry, &location);
 
 	return EXT2_SUCCESS;
@@ -287,7 +287,7 @@ int fs_write(DISK_OPERATIONS* disk, SHELL_FS_OPERATIONS* fsOprs, const SHELL_ENT
 
 void shell_register_filesystem(SHELL_FILESYSTEM* fs)
 {
-	*fs = g_ext2;    //Khởi tạo shell filesystem (FS name, fc pointer)
+	*fs = g_ext2;    //shell filesystem 초기화 (파일시스템 이름,함수포인터)
 }
 
 int	fs_create(DISK_OPERATIONS* disk, SHELL_FS_OPERATIONS* fsOprs, const SHELL_ENTRY* parent, const char* name, SHELL_ENTRY* retEntry)
@@ -312,7 +312,7 @@ int shell_entry_to_ext2_entry(const SHELL_ENTRY* shell_entry, EXT2_NODE* ext2_en
 	return EXT2_SUCCESS;
 }
 
-int ext2_entry_to_shell_entry(EXT2_FILESYSTEM* fs, const EXT2_NODE* ext2_entry, SHELL_ENTRY* shell_entry)		//Copy ext2 entry tới shell entry
+int ext2_entry_to_shell_entry(EXT2_FILESYSTEM* fs, const EXT2_NODE* ext2_entry, SHELL_ENTRY* shell_entry)		//ext2 entry를 shell entry에 복사
 {
 	INODE inode;
 
@@ -365,7 +365,7 @@ int fs_read_dir(DISK_OPERATIONS* disk, const SHELL_ENTRY* parent, SHELL_ENTRY_LI
 
 }
 
-int is_exist(DISK_OPERATIONS* disk, const SHELL_ENTRY* parent, const char* name) 	//Kiểm tra xem tên file tương ứng với tên có tồn tại không và trả về 1 nếu nó tồn tại
+int is_exist(DISK_OPERATIONS* disk, const SHELL_ENTRY* parent, const char* name) 	//name에 해당하는 파일이름이 존재하는지 확인하고 존재하면 1 리턴
 {
 	SHELL_ENTRY_LIST list;
 	SHELL_ENTRY_LIST_ITEM* item;
@@ -435,7 +435,7 @@ int fs_rmdir( DISK_OPERATIONS* disk, SHELL_FS_OPERATIONS* fsOprs, const SHELL_EN
 	shell_entry_to_ext2_entry(dir, &p_node);
 
 	get_inode(disk, &p_node.fs->sb, node.entry.inode, &inode);
-	if(inode.size > 2 * sizeof(EXT2_DIR_ENTRY)) {							//Nếu file đã tồn tại trong directory file thì không xoá được
+	if(inode.size > 2 * sizeof(EXT2_DIR_ENTRY)) {							//directory 파일 내에 파일이 존재하는 경우 삭제 불가 
 		printf("rmdir: failed to remove '%s': Directory not empty\n", node.entry.name);
 		return -1;
 	}
@@ -528,7 +528,7 @@ int fs_ls( DISK_OPERATIONS* disk, const SHELL_ENTRY* dir, SHELL_ENTRY_LIST* list
 		return -1;
 	};
 
-	if(!(opt & 0x0001)) {			//Không có option -a thì remove "." và ".." 
+	if(!(opt & 0x0001)) {			//-a 옵션이 없는 경우 "."과 ".." 디렉토리를 list에서 제거 
 		release = list->first;
 		item = list->first;
 		item = item->next;
@@ -539,12 +539,12 @@ int fs_ls( DISK_OPERATIONS* disk, const SHELL_ENTRY* dir, SHELL_ENTRY_LIST* list
 		list->count -= 2;
 	}
 
-	if(opt & 0x0004) size_sort(list);				//Sort theo dung lượng size nếu chọn -S
-	else if(opt & 0x0008) r_alpha_sort(list);		//Sort theo alphabet nếu chọn -r
-	else alpha_sort(list);							//Lệnh ls cơ bản theo thứ tự alphabet
+	if(opt & 0x0004) size_sort(list);				//-S 옵션이 있는 경우 size 순서로 sorting
+	else if(opt & 0x0008) r_alpha_sort(list);		//-r 옵션이 있는 경우 알파벳 역순으로 sorting 
+	else alpha_sort(list);							//ls 명령어는 알파벳순서가 default임
 
-	if(opt & 0x0002) print_entry_long(list);		//In thông tin chi tiết của file nếu chọn -l
-	else print_entry(list);							//Nếu không chọn -l thì chỉ in file name
+	if(opt & 0x0002) print_entry_long(list);		//-l 옵션이 있는 경우 파일 정보를 자세하게 출력 
+	else print_entry(list);							//-l 옵션이 없는 경우 파일 이름만 출력 
 
 	return EXT2_SUCCESS;
 	
@@ -612,7 +612,7 @@ int print_entry(SHELL_ENTRY_LIST* list)
 	return EXT2_SUCCESS;
 }
 
-int swap(SHELL_ENTRY_LIST* list, int a, int b) 	//Hoán đổi a-th entry và b-th entry trong list
+int swap(SHELL_ENTRY_LIST* list, int a, int b) 	//list에서 a번째 entry와 b번째 entry를 swap
 {
 	SHELL_ENTRY_LIST_ITEM* item_a;
 	SHELL_ENTRY_LIST_ITEM* item_b;
@@ -627,7 +627,7 @@ int swap(SHELL_ENTRY_LIST* list, int a, int b) 	//Hoán đổi a-th entry và b-
 	}
 	item_b = item_a->next;
 
-	if(b == list->count - 1) {		//Case b là entry đứng cuối
+	if(b == list->count - 1) {		//b가 list의 마지막 entry인 경우
 		item_a->next = NULL;
 		item_b->next = item_a;
 		list->last = item_a;
@@ -638,7 +638,7 @@ int swap(SHELL_ENTRY_LIST* list, int a, int b) 	//Hoán đổi a-th entry và b-
 		item_b->next = item_a;
 	}
 
-	if(a == 0) {					//Case a là entry đầu
+	if(a == 0) {					//a가 list의 첫 번째 entry인 경우 
 		list->first = item_b;
 	}
 
